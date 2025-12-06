@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мини-анкета</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .question {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        .question label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .question input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .message {
+            text-align: center;
+            padding: 20px;
+            font-size: 18px;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Мини-анкета</h1>
+        <div id="survey-form">
+            <div id="questions-container">
+                <!-- Questions will be loaded here -->
+            </div>
+            <button id="submit-btn" onclick="submitAnswers()">Отправить ответы</button>
+        </div>
+        <div id="thank-you-message" class="message hidden">
+            Спасибо!
+        </div>
+    </div>
+
+    <script>
+        // Load questions when page loads
+        window.onload = function() {
+            loadQuestions();
+        };
+
+        // Function to load questions from backend
+        function loadQuestions() {
+            fetch('/questions')
+                .then(response => response.json())
+                .then(questions => {
+                    const container = document.getElementById('questions-container');
+                    container.innerHTML = '';
+                    
+                    questions.forEach(question => {
+                        const questionDiv = document.createElement('div');
+                        questionDiv.className = 'question';
+                        questionDiv.innerHTML = `
+                            <label for="q${question.id}">${question.text}</label>
+                            <input type="text" id="q${question.id}" name="q${question.id}" data-question-id="${question.id}" required>
+                        `;
+                        container.appendChild(questionDiv);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading questions:', error);
+                    alert('Ошибка загрузки вопросов');
+                });
+        }
+
+        // Function to submit answers
+        function submitAnswers() {
+            // Get username (using a simple prompt for this example)
+            const username = prompt('Введите ваше имя:', 'Аноним');
+            if (!username) {
+                alert('Имя обязательно для заполнения');
+                return;
+            }
+
+            // Collect answers
+            const answerInputs = document.querySelectorAll('input[data-question-id]');
+            const answers = [];
+            
+            answerInputs.forEach(input => {
+                answers.push({
+                    question_id: parseInt(input.getAttribute('data-question-id')),
+                    answer_text: input.value
+                });
+            });
+
+            // Prepare data for submission
+            const data = {
+                username: username,
+                answers: answers
+            };
+
+            // Send to backend
+            fetch('/answers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                // Show thank you message
+                document.getElementById('survey-form').classList.add('hidden');
+                document.getElementById('thank-you-message').classList.remove('hidden');
+            })
+            .catch(error => {
+                console.error('Error submitting answers:', error);
+                alert('Ошибка отправки ответов');
+            });
+        }
+    </script>
+</body>
+</html>
